@@ -3,7 +3,7 @@
 DFIR Log Sorter - Flask Web Application
 A Digital Forensics and Incident Response tool with enhanced time entry and automatic log file generation.
 
-Author: Faris
+Author: FSMutairi
 Created: 2025
 """
 

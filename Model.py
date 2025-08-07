@@ -3,8 +3,8 @@
 AI Model Configuration for DFIR Log Sorter
 Contains the prompt template for Ollama-based log analysis.
 
-Author: Faris
-Created: 2024
+Author: FSMutairi
+Created: 2025
 """
 
 import ollama

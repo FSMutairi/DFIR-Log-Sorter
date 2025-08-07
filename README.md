@@ -194,7 +194,7 @@ For issues, questions, or feature requests:
 
 ## 👨‍💻 Author
 
-**Faris** - *Creator & Developer*
+**FSMutairi** - *Creator & Developer*
 
 ---
 

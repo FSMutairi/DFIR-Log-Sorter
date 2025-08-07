@@ -3,7 +3,7 @@
 DFIR Log Sorter Application
 A Digital Forensics and Incident Response tool for logging and sorting events by timestamp.
 
-Author: Faris
+Author: FSMutairi
 Created: 2025
 """
 
