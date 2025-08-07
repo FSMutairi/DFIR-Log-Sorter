@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - DFIR Log Sorter{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <i class="fas fa-search-plus logo-icon"></i>
+                <div class="title-group">
+                    <h1 class="main-title">DFIR Log Sorter</h1>
+                    <p class="subtitle">Digital Forensics & Incident Response Timeline Analysis</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Error Content -->
+    <main class="main-content">
+        <section class="error-section">
+            <div class="card error-card">
+                <div class="card-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h2>{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="error-content">
+                        <div class="error-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="error-details">
+                            <h3>{{ title }}</h3>
+                            <p>{{ message }}</p>
+                            
+                            <div class="error-actions">
+                                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                    <i class="fas fa-home"></i>
+                                    Go to Dashboard
+                                </a>
+                                <a href="{{ url_for('setup_investigation') }}" class="btn btn-secondary">
+                                    <i class="fas fa-plus"></i>
+                                    Start New Investigation
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="status-bar">
+        <div class="status-content">
+            <div class="status-info">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Error occurred - Please try again</span>
+            </div>
+            <div class="status-version">
+                <span>DFIR Log Sorter Flask v1.0</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<style>
+.error-section {
+    max-width: 600px;
+    margin: 50px auto;
+}
+
+.error-card {
+    text-align: center;
+}
+
+.error-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    padding: 40px 20px;
+}
+
+.error-icon {
+    font-size: 4rem;
+    color: var(--accent-red);
+    opacity: 0.7;
+}
+
+.error-details h3 {
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    font-size: var(--font-size-xl);
+}
+
+.error-details p {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+@media (max-width: 480px) {
+    .error-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .error-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

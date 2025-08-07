@@ -1,0 +1,804 @@
+{% extends "base.html" %}
+
+{% block title %}{{ investigation_name }} - DFIR Log Sorter{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Enhanced time entry styles */
+.time-entry-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.time-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.datetime-input {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    transition: all var(--transition-fast);
+}
+
+.datetime-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.datetime-input::-webkit-calendar-picker-indicator {
+    background-color: var(--accent-blue);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.time-toggle {
+    display: flex;
+    background: var(--bg-accent);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.time-toggle button {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.time-toggle button.active {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.time-toggle button:hover:not(.active) {
+    background: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.flash-messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.flash-message {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    animation: slideInRight 0.3s ease;
+}
+
+.flash-content {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.flash-success {
+    border-left: 4px solid var(--accent-green);
+}
+
+.flash-error {
+    border-left: 4px solid var(--accent-red);
+}
+
+.flash-info {
+    border-left: 4px solid var(--accent-blue);
+}
+
+.flash-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: var(--radius-sm);
+    margin-left: auto;
+}
+
+.flash-close:hover {
+    color: var(--text-primary);
+    background: var(--hover-color);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.investigation-header {
+    background: linear-gradient(135deg, var(--accent-blue) 0%, #3182ce 100%);
+    color: white;
+    padding: 15px 25px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+}
+
+.investigation-info h3 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.investigation-info p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: var(--font-size-sm);
+}
+
+.investigation-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+}
+
+.btn-outline:hover {
+    background: white;
+    color: var(--accent-blue);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <i class="fas fa-search-plus logo-icon"></i>
+                <div class="title-group">
+                    <h1 class="main-title">DFIR Log Sorter</h1>
+                    <p class="subtitle">Digital Forensics & Incident Response Timeline Analysis</p>
+                </div>
+            </div>
+            <div class="stats-section">
+                <div class="stat-item">
+                    <span class="stat-label">Total Entries:</span>
+                    <span id="entryCount" class="stat-value">{{ log_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Status:</span>
+                    <span id="sortStatus" class="stat-value">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Investigation Header -->
+    <div class="investigation-header">
+        <div class="investigation-info">
+            <h3>
+                <i class="fas fa-folder-open"></i>
+                Investigation: {{ investigation_name }}
+            </h3>
+            <p>
+                <i class="fas fa-calendar"></i>
+                Session started: <span id="sessionTime"></span>
+            </p>
+            <p>
+                <i class="fas fa-folder"></i>
+                Files saved to: <code>logs/{{ investigation_name }}/</code>
+            </p>
+        </div>
+        <div class="investigation-actions">
+            <button onclick="exportToFile()" class="btn btn-outline">
+                <i class="fas fa-save"></i>
+                Save Log File
+            </button>
+            <button onclick="resetInvestigation()" class="btn btn-outline">
+                <i class="fas fa-refresh"></i>
+                New Investigation
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Input Section -->
+        <section class="input-section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-plus-circle"></i>
+                    <h2>Add New Log Entry</h2>
+                </div>
+                <div class="card-body">
+                    <form id="logForm" class="log-form">
+                        <!-- Enhanced Time Entry -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="timestamp" class="form-label">
+                                    <i class="fas fa-clock"></i>
+                                    Timestamp
+                                </label>
+                                <div class="time-entry-container">
+                                    <div class="time-toggle">
+                                        <button type="button" id="pickerMode" class="active">Date/Time Picker</button>
+                                        <button type="button" id="manualMode">Manual Entry</button>
+                                    </div>
+                                    
+                                    <div class="time-input-group">
+                                        <input 
+                                            type="datetime-local" 
+                                            id="datetimePicker" 
+                                            class="datetime-input"
+                                            step="1"
+                                        >
+                                        <input 
+                                            type="text" 
+                                            id="manualInput" 
+                                            class="form-input"
+                                            placeholder="YYYY-MM-DD-H-M-S"
+                                            style="display: none;"
+                                        >
+                                        <button type="button" id="currentTimeBtn" class="btn btn-secondary">
+                                            <i class="fas fa-clock"></i>
+                                            Now
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="help-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span id="timeHelpText">Use the date/time picker for easy selection, or switch to manual entry</span>
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Log Description Row (Long Line) -->
+                        <div class="form-row">
+                            <div class="form-group description-group-full">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-file-alt"></i>
+                                    Log Description
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="description" 
+                                    name="description" 
+                                    class="form-input form-input-long"
+                                    placeholder="Enter detailed description of the log event... (This is a long line for easy writing)"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Severity Row -->
+                        <div class="form-row">
+                            <div class="form-group severity-group">
+                                <label for="severity" class="form-label">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Severity
+                                </label>
+                                <select id="severity" name="severity" class="form-select">
+                                    <option value="Info">ℹ️ Info</option>
+                                    <option value="Low">🔵 Low</option>
+                                    <option value="Medium">🟡 Medium</option>
+                                    <option value="High">🟠 High</option>
+                                    <option value="Critical">🔴 Critical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="form-row">
+                            <button type="submit" class="btn btn-primary btn-large">
+                                <i class="fas fa-plus"></i>
+                                Add Log Entry
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls Section -->
+        <section class="controls-section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2>Timeline Controls</h2>
+                </div>
+                <div class="card-body">
+                    <div class="controls-grid">
+                        <div class="control-group">
+                            <h3>Primary Actions</h3>
+                            <div class="button-group">
+                                <button id="sortBtn" class="btn btn-primary">
+                                    <i class="fas fa-sort-amount-down"></i>
+                                    Sort by Timestamp
+                                </button>
+                                <button id="aiAnalysisBtn" class="btn btn-success">
+                                    <i class="fas fa-robot"></i>
+                                    AI Analysis
+                                </button>
+                                <button id="clearBtn" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                    Clear All
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3>Export & Save</h3>
+                            <div class="button-group">
+                                <button id="saveFileBtn" class="btn btn-success">
+                                    <i class="fas fa-file-alt"></i>
+                                    Save Log File
+                                </button>
+                                <button id="exportBtn" class="btn btn-primary">
+                                    <i class="fas fa-download"></i>
+                                    Export
+                                </button>
+                                <button id="importBtn" class="btn btn-secondary">
+                                    <i class="fas fa-file-import"></i>
+                                    Import CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list-ul"></i>
+                    <h2>Log Entries Timeline</h2>
+                    <div class="timeline-info">
+                        <span id="timelineCount">{{ log_count }} entries</span>
+                        <span id="timelineStatus" class="status-badge"></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state" {% if log_count > 0 %}style="display: none;"{% endif %}>
+                        <i class="fas fa-clipboard-list empty-icon"></i>
+                        <h3>No log entries yet</h3>
+                        <p>Add your first log entry above to start building your investigation timeline</p>
+                    </div>
+
+                    <!-- Timeline Table -->
+                    <div id="timelineContainer" class="timeline-container" {% if log_count == 0 %}style="display: none;"{% endif %}>
+                        <div class="table-wrapper">
+                            <table id="timelineTable" class="timeline-table">
+                                <thead>
+                                    <tr>
+                                        <th class="timestamp-col">
+                                            <div class="column-header-with-sort">
+                                                <div class="column-title">
+                                                    <i class="fas fa-clock"></i>
+                                                    Timestamp
+                                                </div>
+                                                <div class="sort-controls">
+                                                    <button type="button" class="sort-btn" id="sortAscBtn" title="Sort Old to New (Ascending)">
+                                                        <i class="fas fa-sort-up"></i>
+                                                    </button>
+                                                    <button type="button" class="sort-btn" id="sortDescBtn" title="Sort New to Old (Descending)">
+                                                        <i class="fas fa-sort-down"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </th>
+                                        <th class="severity-col">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Severity
+                                        </th>
+                                        <th class="description-col">
+                                            <i class="fas fa-file-alt"></i>
+                                            Description
+                                        </th>
+                                        <th class="actions-col">
+                                            <i class="fas fa-cog"></i>
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timelineBody">
+                                    <!-- Dynamic content will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Analysis Results Section -->
+                <div id="aiResultsSection" class="ai-results-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-robot"></i>
+                            <h2>AI Security Analysis Results</h2>
+                            <div class="ai-results-actions">
+                                <button id="exportAiResultsBtn" class="btn btn-success btn-sm">
+                                    <i class="fas fa-download"></i>
+                                    Export Analysis
+                                </button>
+                                <button id="clearAiResultsBtn" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-trash"></i>
+                                    Clear Results
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="ai-results-content">
+                                <div class="ai-results-status">
+                                    <div class="ai-status-icon">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="ai-status-text">
+                                        <h4 id="aiResultsTitle">Analysis Complete</h4>
+                                        <p id="aiResultsMessage">AI has analyzed your timeline and provided security insights.</p>
+                                    </div>
+                                </div>
+                                <div class="ai-results-text">
+                                    <textarea id="aiResultsText" class="ai-results-textarea" readonly></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Analysis Section -->
+                <div id="aiAnalysisSection" class="ai-analysis-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-robot"></i>
+                            <h2>AI Security Analysis</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="ai-analysis-content">
+                                <div class="ai-analysis-status" id="mainAnalysisStatus">
+                                    <div class="status-icon">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="status-text">
+                                        <h4 id="mainStatusTitle">Ready for Analysis</h4>
+                                        <p id="mainStatusMessage">Click "Start Analysis" to send your logs to AI for comprehensive security analysis.</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="ai-analysis-progress" id="mainAnalysisProgress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="mainProgressFill"></div>
+                                    </div>
+                                    <div class="progress-text" id="mainProgressText">Initializing...</div>
+                                </div>
+                                
+                                <div class="ai-analysis-info">
+                                    <h4><i class="fas fa-info-circle"></i> What will be analyzed:</h4>
+                                    <ul>
+                                        <li>Attack timeline and sequence of events</li>
+                                        <li>Potential indicators of compromise (IOCs)</li>
+                                        <li>Compromised systems and user accounts</li>
+                                        <li>Recommended containment and remediation steps</li>
+                                        <li>Immediate actions for SOC/IR teams</li>
+                                        <li>Executive summary for management</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="ai-analysis-actions">
+                                    <button id="startMainAnalysisBtn" class="btn btn-primary">
+                                        <i class="fas fa-play"></i>
+                                        Start AI Analysis
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <div class="status-content">
+            <div class="status-info">
+                <i class="fas fa-info-circle"></i>
+                <span id="statusMessage">Ready - Enter log entries and organize your investigation timeline</span>
+            </div>
+            <div class="status-version">
+                <span>DFIR Log Sorter Flask v1.0</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-edit"></i>
+                Edit Log Entry
+            </h3>
+            <button id="closeModal" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="editForm" class="edit-form">
+                <input type="hidden" id="editEntryId">
+                
+                <div class="form-group">
+                    <label for="editTimestamp" class="form-label">
+                        <i class="fas fa-clock"></i>
+                        Timestamp
+                    </label>
+                    <input 
+                        type="text" 
+                        id="editTimestamp" 
+                        name="editTimestamp" 
+                        class="form-input"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="editSeverity" class="form-label">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Severity
+                    </label>
+                    <select id="editSeverity" name="editSeverity" class="form-select">
+                        <option value="Info">ℹ️ Info</option>
+                        <option value="Low">🔵 Low</option>
+                        <option value="Medium">🟡 Medium</option>
+                        <option value="High">🟠 High</option>
+                        <option value="Critical">🔴 Critical</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDescription" class="form-label">
+                        <i class="fas fa-file-alt"></i>
+                        Description
+                    </label>
+                    <input 
+                        type="text" 
+                        id="editDescription" 
+                        name="editDescription" 
+                        class="form-input form-input-long"
+                        placeholder="Enter detailed description..."
+                    >
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancelEdit" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="exportModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-download"></i>
+                Export Timeline
+            </h3>
+            <button id="closeExportModal" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="export-options">
+                <p class="export-description">
+                    Choose your preferred export format for the timeline data:
+                </p>
+                
+                <div class="export-buttons">
+                    <button id="exportCsvBtn" class="export-btn export-csv">
+                        <i class="fas fa-file-csv"></i>
+                        <div class="export-btn-content">
+                            <h4>Export as CSV</h4>
+                            <p>Spreadsheet format for data analysis</p>
+                        </div>
+                    </button>
+                    
+                    <button id="exportTxtBtn" class="export-btn export-txt">
+                        <i class="fas fa-file-alt"></i>
+                        <div class="export-btn-content">
+                            <h4>Export as TXT</h4>
+                            <p>Plain text format for easy reading</p>
+                        </div>
+                    </button>
+                </div>
+                
+                <div class="export-actions">
+                    <button id="cancelExport" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-file-import"></i>
+                Import CSV File
+            </h3>
+            <button id="closeImportModal" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="import-options">
+                <p class="import-description">
+                    Import log entries from a CSV file. The file should contain columns for Timestamp, Severity, and Description.
+                </p>
+                
+                <div class="file-upload-section">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="csvFileInput" accept=".csv" class="file-input">
+                        <label for="csvFileInput" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose CSV file or drag and drop</span>
+                        </label>
+                    </div>
+                    
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <div class="file-details">
+                            <i class="fas fa-file-csv"></i>
+                            <span id="fileName"></span>
+                            <span id="fileSize"></span>
+                        </div>
+                        <button type="button" id="removeFile" class="remove-file-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="import-progress" id="importProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">Importing...</div>
+                    </div>
+                </div>
+                
+                <div class="csv-format-info">
+                    <h4><i class="fas fa-info-circle"></i> Expected CSV Format:</h4>
+                    <div class="format-example">
+                        <code>
+                            Timestamp,Severity,Description<br>
+                            2024-01-15 14:30:25,Info,User login detected<br>
+                            2024-01-15 14:31:00,Medium,Failed authentication attempt
+                        </code>
+                    </div>
+                    <p class="format-note">
+                        <strong>Note:</strong> The first row should contain column headers. Supported severity levels: Critical, High, Medium, Low, Info.
+                    </p>
+                </div>
+                
+                <div class="import-actions">
+                    <button id="cancelImport" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button id="importCsvBtn" class="btn btn-primary" disabled>
+                        <i class="fas fa-upload"></i>
+                        Import File
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Analysis Modal -->
+<div id="aiAnalysisModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-robot"></i>
+                AI Security Analysis
+            </h3>
+            <button id="closeAiModal" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="ai-analysis-container">
+                <div class="analysis-status" id="analysisStatus">
+                    <div class="status-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="status-text">
+                        <h4 id="statusTitle">Ready for Analysis</h4>
+                        <p id="aiStatusMessage">Click "Start Analysis" to send your logs to AI for comprehensive security analysis.</p>
+                    </div>
+                </div>
+                
+                <div class="analysis-progress" id="analysisProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="aiProgressFill"></div>
+                    </div>
+                    <div class="progress-text" id="aiProgressText">Initializing...</div>
+                </div>
+                
+                <div class="analysis-info">
+                    <h4><i class="fas fa-info-circle"></i> What will be analyzed:</h4>
+                    <ul>
+                        <li>Attack timeline and sequence of events</li>
+                        <li>Potential indicators of compromise (IOCs)</li>
+                        <li>Compromised systems and user accounts</li>
+                        <li>Recommended containment and remediation steps</li>
+                        <li>Immediate actions for SOC/IR teams</li>
+                        <li>Executive summary for management</li>
+                    </ul>
+                </div>
+                
+                <div class="analysis-results" id="analysisResults" style="display: none;">
+                    <h4><i class="fas fa-clipboard-check"></i> Analysis Results:</h4>
+                    <div class="results-container">
+                        <textarea id="analysisText" class="analysis-textarea" readonly></textarea>
+                    </div>
+                </div>
+                
+                <div class="analysis-actions">
+                    <button id="exportAnalysisBtn" class="btn btn-success" style="display: none;">
+                        <i class="fas fa-download"></i>
+                        Export Analysis
+                    </button>
+                    <button id="cancelAiAnalysis" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,19 @@
+# DFIR Log Sorter Flask Application Requirements
+# Install with: pip install -r requirements.txt
+
+# Core Flask framework
+Flask==3.0.0
+
+# Production WSGI server (optional, for deployment)
+Gunicorn==21.2.0
+
+# Enhanced development features (optional)
+Flask-WTF==1.2.1        # CSRF protection and form handling
+Werkzeug==3.0.1         # WSGI utilities (included with Flask)
+
+# Standard library dependencies (included with Python)
+# - datetime: timestamp handling
+# - pathlib: file path management
+# - json: JSON export functionality
+# - uuid: unique ID generation
+# - re: regular expressions for validation

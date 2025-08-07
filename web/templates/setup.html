@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Investigation - DFIR Log Sorter{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <i class="fas fa-search-plus logo-icon"></i>
+                <div class="title-group">
+                    <h1 class="main-title">DFIR Log Sorter</h1>
+                    <p class="subtitle">Digital Forensics & Incident Response Timeline Analysis</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Setup Form -->
+    <main class="main-content">
+        <section class="setup-section">
+            <div class="card setup-card">
+                <div class="card-header">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h2>Setup New Investigation</h2>
+                </div>
+                <div class="card-body">
+                    <div class="setup-info">
+                        <div class="info-item">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <h3>Investigation Session</h3>
+                                <p>Enter a name for your investigation. This will be used to organize your log entries and create the final report file.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-file-alt"></i>
+                            <div>
+                                <h3>Automatic File Management</h3>
+                                <p>All your log entries will be automatically saved to <code>investigation_logs.csv</code> in your investigation folder. AI analysis results will be saved as timestamped TXT files in the same folder.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <h3>Enhanced Time Entry</h3>
+                                <p>Easy date and time picking with both manual entry and calendar/time picker options.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form action="{{ url_for('start_investigation') }}" method="POST" class="setup-form">
+                        <div class="form-group">
+                            <label for="investigation_name" class="form-label">
+                                <i class="fas fa-building"></i>
+                                Investigation Name
+                            </label>
+                            <input 
+                                type="text" 
+                                id="investigation_name" 
+                                name="investigation_name" 
+                                class="form-input form-input-large"
+                                placeholder="e.g., Company_SecInc_2024, Case_001_MalwareAnalysis, Client_ABC_Breach"
+                                required
+                                minlength="3"
+                                maxlength="100"
+                                autocomplete="off"
+                                autofocus
+                            >
+                            <small class="help-text">
+                                <i class="fas fa-lightbulb"></i>
+                                Use descriptive names like company names, case numbers, or investigation types. Avoid special characters.
+                            </small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-large">
+                                <i class="fas fa-play"></i>
+                                Start Investigation
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="setup-examples">
+                        <h4>
+                            <i class="fas fa-lightbulb"></i>
+                            Example Investigation Names:
+                        </h4>
+                        <div class="examples-grid">
+                            <div class="example-item">
+                                <strong>Corporate Incident:</strong>
+                                <code>Company_TechCorp_DataBreach_2024</code>
+                            </div>
+                            <div class="example-item">
+                                <strong>Forensic Case:</strong>
+                                <code>Case_012_RansomwareAnalysis</code>
+                            </div>
+                            <div class="example-item">
+                                <strong>Client Investigation:</strong>
+                                <code>Client_ABC_SecurityIncident</code>
+                            </div>
+                            <div class="example-item">
+                                <strong>Internal Audit:</strong>
+                                <code>Internal_Audit_Q1_2024</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="status-bar">
+        <div class="status-content">
+            <div class="status-info">
+                <i class="fas fa-shield-alt"></i>
+                <span>Ready to start your DFIR investigation</span>
+            </div>
+            <div class="status-version">
+                <span>DFIR Log Sorter Flask v1.0</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<style>
+/* Additional styles for setup page */
+.setup-section {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.setup-card {
+    margin-top: 0;
+}
+
+.setup-info {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-item i {
+    color: var(--accent-blue);
+    font-size: var(--font-size-lg);
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.info-item h3 {
+    color: var(--text-primary);
+    margin: 0 0 5px 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+}
+
+.info-item p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.info-item code {
+    background: var(--bg-accent);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-family: 'Consolas', monospace;
+    color: var(--accent-blue);
+}
+
+.setup-form {
+    margin-bottom: 30px;
+}
+
+.form-input-large {
+    font-size: var(--font-size-lg);
+    padding: 20px;
+    min-height: 60px;
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.setup-examples {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.setup-examples h4 {
+    color: var(--text-primary);
+    margin: 0 0 15px 0;
+    font-size: var(--font-size-base);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setup-examples h4 i {
+    color: var(--accent-yellow);
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.example-item {
+    padding: 12px;
+    background: var(--bg-accent);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.example-item strong {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 5px;
+    font-size: var(--font-size-sm);
+}
+
+.example-item code {
+    background: var(--bg-primary);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-family: 'Consolas', monospace;
+    color: var(--accent-green);
+    font-size: var(--font-size-sm);
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .examples-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('investigation_name');
+    
+    // Auto-focus and select text on page load
+    if (input) {
+        input.focus();
+        
+        // Format input as user types (remove invalid characters)
+        input.addEventListener('input', function(e) {
+            let value = e.target.value;
+            // Replace invalid filename characters with underscores
+            value = value.replace(/[<>:"/\\|?*]/g, '_');
+            // Remove multiple consecutive underscores
+            value = value.replace(/_+/g, '_');
+            e.target.value = value;
+        });
+        
+        // Handle Enter key
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.target.form.submit();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
